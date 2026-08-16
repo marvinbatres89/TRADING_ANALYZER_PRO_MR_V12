@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07121e">
+  <title>Trading Analyst Pro MR Hybrid</title>
+  <link rel="stylesheet" href="./style.css?v=11.4.0">
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <div class="eyebrow">MOTOR CONTINUO · VALIDACIÓN RÁPIDA · BOT BRIDGE</div>
+        <h1>TRADING ANALYST <span>PRO MR</span></h1>
+        <div id="appVersion" class="version">--</div>
+      </div>
+      <div class="status-grid">
+        <div class="pill"><small>DERIV</small><b id="connectionStatus">OFFLINE</b></div>
+        <div class="pill"><small>MOTOR</small><b id="engineStatus">OFF</b></div>
+      </div>
+    </header>
+
+    <section class="card">
+      <div class="grid">
+        <label>Mercado
+          <select id="marketSelect"></select>
+        </label>
+        <label>Estrategia
+          <select id="strategySelect"></select>
+        </label>
+        <label>Modo
+          <select id="modeSelect">
+            <option value="fast">Rápido · 20</option>
+            <option value="deep">Profundo · 40</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="buttons">
+        <button id="connectButton" class="primary">CONECTAR</button>
+        <button id="disconnectButton">DESCONECTAR</button>
+        <button id="predictionButton" class="accent" disabled>PREDICTION</button>
+        <button id="voiceButton">🔊 VOZ</button>
+      </div>
+    </section>
+
+    <section class="card ticker">
+      <div><small>PRECIO</small><b id="price">--</b></div>
+      <div><small>DATOS</small><b id="tickCount">0</b></div>
+      <div><small>ÚLTIMO DÍGITO</small><b id="lastDigit">--</b></div>
+    </section>
+
+    <section class="card indicators">
+      <div><small>TENDENCIA</small><b id="trend">--</b></div>
+      <div><small>RSI</small><b id="rsi">--</b></div>
+      <div><small>MOMENTUM</small><b id="momentum">--</b></div>
+      <div><small>VOLATILIDAD</small><b id="volatility">--</b></div>
+    </section>
+
+    <section class="card signal">
+      <div class="eyebrow">SEÑAL ACTUAL</div>
+      <h2 id="signalState">EN ESPERA</h2>
+      <div id="signalValue" class="signal-value">--</div>
+      <div id="signalScore" class="score">--</div>
+      <p id="signalReason">Conecte. El histórico se precargará y el motor comenzará a analizar en segundo plano.</p>
+      <div class="countdown"><small>CUENTA</small><b id="countdown">--</b></div>
+    </section>
+
+    <section class="card stats">
+      <div><small>PRUEBAS</small><b id="statsTests">0</b></div>
+      <div><small>GANADAS</small><b id="statsWins">0</b></div>
+      <div><small>PERDIDAS</small><b id="statsLosses">0</b></div>
+      <div><small>PRECISIÓN</small><b id="statsAccuracy">--</b></div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">DIAGNÓSTICO</div>
+          <strong>Registro técnico</strong>
+        </div>
+        <button id="clearDiagnostic">LIMPIAR</button>
+      </div>
+      <div id="diagnostic" class="diagnostic"></div>
+    </section>
+
+    <footer>
+      DEMO / CALIBRACIÓN. El score técnico no garantiza ganancias.
+    </footer>
+  </main>
+
+  <script type="module" src="./app.js?v=11.4.0"></script>
+</body>
+</html>
