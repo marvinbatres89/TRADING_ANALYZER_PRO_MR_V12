@@ -86,13 +86,14 @@ export const ENGINE = Object.freeze({
   executionSeconds: 10,
   cooldownMs: 3000,
   qualityThresholds: {
-    rise_fall: 78,
-    even_odd: 76,
-    over_under: 76,
-    match: 82,
-    boom: 78,
-    crash: 78
-  },
+  rise_fall: 72,
+  even_odd: 70,
+  over_under: 70,
+  match: 76,
+  boom: 74,
+  crash: 74
+},
+  
   latency: {
     optimalMs: 500,
     acceptableMs: 1000,
