@@ -736,7 +736,146 @@ async function beginPredictionSequence(result) {
   const targeted = testRegistry.setTarget(testRecord.id, state.targetTenAt);
   setTestButtons(targeted);
   renderTestRegistry();
+  /* ==========================================
+     V12 -> BOT V1 MR
+     ENVÍO DE SEÑAL CONFIRMADA
+     ========================================== */
 
+  try {
+
+    const BOT_CHANNEL_NAME =
+      "trading-analyzer-bot-v1-mr";
+
+    const STORAGE_SIGNAL_KEY =
+      "TA_BOT_SIGNAL_V1";
+
+    const segundosEntrada =
+      Number(
+        result?.segundosEntrada ??
+        result?.targetSecond ??
+        10
+      );
+
+    const targetExecutionAt =
+      state.targetTenAt +
+      Math.max(
+        0,
+        (10 - segundosEntrada) * 1000
+      );
+
+    const senalBot = {
+
+      id:
+        `TA-${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2, 8)}`,
+
+      mercado:
+        state.symbol,
+
+      estrategia:
+        state.strategy,
+
+      direccion:
+        result.direction,
+
+      confianza:
+        Number(
+          result.score ??
+          result.confidence ??
+          0
+        ),
+
+      precio:
+        state.snapshot?.price ??
+        null,
+
+      ultimoDigito:
+        state.snapshot?.lastDigit ??
+        null,
+
+      tendencia:
+        state.snapshot?.trend ??
+        null,
+
+      rsi:
+        state.snapshot?.rsi ??
+        null,
+
+      momentum:
+        state.snapshot?.momentum ??
+        null,
+
+      volatilidad:
+        state.snapshot?.volatility ??
+        null,
+
+      segundosEntrada,
+
+      targetExecutionAt,
+
+      modo:
+        state.mode,
+
+      origen:
+        "TRADING_ANALYZER_PRO_MR_V12",
+
+      timestamp:
+        Date.now(),
+
+      metadata: {
+        targetExecutionAt,
+        targetVisualAt:
+          targetExecutionAt,
+
+        targetTenAt:
+          state.targetTenAt,
+
+        bridgeVersion:
+          "V12-BOT-FIX11"
+      }
+
+    };
+
+    localStorage.setItem(
+      STORAGE_SIGNAL_KEY,
+      JSON.stringify(senalBot)
+    );
+
+    if (
+      "BroadcastChannel" in window
+    ) {
+
+      const canalBot =
+        new BroadcastChannel(
+          BOT_CHANNEL_NAME
+        );
+
+      canalBot.postMessage(
+        senalBot
+      );
+
+      canalBot.close();
+
+    }
+
+    console.log(
+      "V12 -> BOT · señal enviada",
+      senalBot
+    );
+
+  } catch (error) {
+
+    console.error(
+      "V12 -> BOT · error enviando señal",
+      error
+    );
+
+  }
+
+  /* ==========================================
+     FIN ENVÍO V12 -> BOT
+     ========================================== */
   diagnostics.ok("V12 TESTLOG · TARGET 10 registrado.", {
     id: testRecord.id,
     targetTenAt: state.targetTenAt
