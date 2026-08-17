@@ -736,9 +736,9 @@ async function beginPredictionSequence(result) {
   const targeted = testRegistry.setTarget(testRecord.id, state.targetTenAt);
   setTestButtons(targeted);
   renderTestRegistry();
-  /* ==========================================
+    /* ==========================================
      V12 -> BOT V1 MR
-     ENVÍO DE SEÑAL CONFIRMADA
+     PROTOCOLO PREPARAR + EJECUTAR
      ========================================== */
 
   try {
@@ -749,6 +749,11 @@ async function beginPredictionSequence(result) {
     const STORAGE_SIGNAL_KEY =
       "TA_BOT_SIGNAL_V1";
 
+    const operacionId =
+      `TA-${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2, 8)}`;
+
     const segundosEntrada =
       Number(
         result?.segundosEntrada ??
@@ -756,19 +761,35 @@ async function beginPredictionSequence(result) {
         10
       );
 
-    const targetExecutionAt =
-      state.targetTenAt +
-      Math.max(
-        0,
-        (10 - segundosEntrada) * 1000
+    const enviarAlBot = (mensaje) => {
+
+      localStorage.setItem(
+        STORAGE_SIGNAL_KEY,
+        JSON.stringify(mensaje)
       );
 
-    const senalBot = {
+      if (
+        "BroadcastChannel" in window
+      ) {
 
-      id:
-        `TA-${Date.now()}-${Math.random()
-          .toString(36)
-          .slice(2, 8)}`,
+        const canalBot =
+          new BroadcastChannel(
+            BOT_CHANNEL_NAME
+          );
+
+        canalBot.postMessage(
+          mensaje
+        );
+
+        canalBot.close();
+
+      }
+
+    };
+
+    const datosBase = {
+
+      operacionId,
 
       mercado:
         state.symbol,
@@ -812,69 +833,171 @@ async function beginPredictionSequence(result) {
 
       segundosEntrada,
 
-      targetExecutionAt,
-
       modo:
         state.mode,
 
       origen:
-        "TRADING_ANALYZER_PRO_MR_V12",
+        "TRADING_ANALYZER_PRO_MR_V12"
+
+    };
+
+
+    /* ======================================
+       FASE 1 · PREPARAR
+       ====================================== */
+
+    const ahoraPreparar =
+      Date.now();
+
+    const preparar = {
+
+      ...datosBase,
+
+      id:
+        `${operacionId}-PREPARE`,
+
+      fase:
+        "PREPARAR",
+
+      protocolo:
+        "FIX13.4.2",
+
+      targetExecutionAt:
+        null,
+
+      targetVisualAt:
+        null,
 
       timestamp:
-        Date.now(),
+        ahoraPreparar,
 
       metadata: {
-        targetExecutionAt,
-        targetVisualAt:
-          targetExecutionAt,
 
-        targetTenAt:
-          state.targetTenAt,
+        operacionId,
 
-        bridgeVersion:
-          "V12-BOT-FIX11"
+        fase:
+          "PREPARAR",
+
+        protocolo:
+          "FIX13.4.2",
+
+        prepararCotizacion:
+          true,
+
+        ejecutar:
+          false
+
       }
 
     };
 
-    localStorage.setItem(
-      STORAGE_SIGNAL_KEY,
-      JSON.stringify(senalBot)
+    enviarAlBot(
+      preparar
     );
 
-    if (
-      "BroadcastChannel" in window
-    ) {
+    console.log(
+      "V12 -> BOT · PREPARAR enviado",
+      preparar
+    );
 
-      const canalBot =
-        new BroadcastChannel(
-          BOT_CHANNEL_NAME
-        );
 
-      canalBot.postMessage(
-        senalBot
+    /*
+      Damos tiempo al BOT para solicitar
+      y guardar la propuesta de Deriv.
+    */
+
+    await sleep(
+      700
+    );
+
+
+    /* ======================================
+       FASE 2 · EJECUTAR
+       ====================================== */
+
+    const targetExecutionAt =
+      Math.max(
+        Date.now() + 300,
+        state.targetTenAt +
+          Math.max(
+            0,
+            (10 - segundosEntrada) *
+              1000
+          )
       );
 
-      canalBot.close();
+    const ahoraEjecutar =
+      Date.now();
 
-    }
+    const ejecutar = {
+
+      ...datosBase,
+
+      id:
+        `${operacionId}-TARGET`,
+
+      fase:
+        "EJECUTAR",
+
+      protocolo:
+        "FIX13.4.2",
+
+      targetExecutionAt,
+
+      targetVisualAt:
+        targetExecutionAt,
+
+      timestamp:
+        ahoraEjecutar,
+
+      metadata: {
+
+        operacionId,
+
+        fase:
+          "EJECUTAR",
+
+        protocolo:
+          "FIX13.4.2",
+
+        targetExecutionAt,
+
+        targetVisualAt:
+          targetExecutionAt,
+
+        prepararCotizacion:
+          false,
+
+        ejecutar:
+          true,
+
+        referenciaEntrada:
+          "INICIO_10"
+
+      }
+
+    };
+
+    enviarAlBot(
+      ejecutar
+    );
 
     console.log(
-      "V12 -> BOT · señal enviada",
-      senalBot
+      "V12 -> BOT · EJECUTAR enviado",
+      ejecutar
     );
 
   } catch (error) {
 
     console.error(
-      "V12 -> BOT · error enviando señal",
+      "V12 -> BOT · error protocolo PREPARAR/EJECUTAR",
       error
     );
 
   }
 
   /* ==========================================
-     FIN ENVÍO V12 -> BOT
+     FIN PROTOCOLO V12 -> BOT
      ========================================== */
   diagnostics.ok("V12 TESTLOG · TARGET 10 registrado.", {
     id: testRecord.id,
