@@ -2,6 +2,53 @@ const clamp = (value, min, max) =>
   Math.max(min, Math.min(max, Number(value) || 0));
 
 function output(strategy, direction, score, reasons, warnings = [], metadata = {}) {
+  const rawScore = Number(score) || 0;
+
+  const visibleScore =
+    Math.round(
+      clamp(
+        rawScore,
+        0,
+        100
+      )
+    );
+
+  return {
+    source: "ENGINE_1",
+    strategy,
+    direction,
+
+    // Porcentaje que actualmente muestra la herramienta.
+    score: visibleScore,
+
+    // FIX DIAGNÓSTICO:
+    // conserva el valor real antes de limitarlo a 100.
+    rawScore:
+      Math.round(
+        rawScore * 100
+      ) / 100,
+
+    reasons,
+    warnings,
+
+    metadata: {
+      ...metadata,
+
+      rawScore:
+        Math.round(
+          rawScore * 100
+        ) / 100,
+
+      visibleScore,
+
+      scoreSaturated:
+        rawScore > 100
+    },
+
+    createdAt:
+      Date.now()
+  };
+}
   return {
     source: "ENGINE_1",
     strategy,
@@ -88,68 +135,194 @@ function digitBinary(strategy, snapshot) {
   const long = snapshot.digits.long;
 
   if (short.count < 20) {
-    return output(strategy, "WAIT", 0, ["Recopilando dígitos."]);
+    return output(
+      strategy,
+      "WAIT",
+      0,
+      ["Recopilando dígitos."]
+    );
   }
 
-  let shortA, shortB, mediumA, mediumB, longA, longB, direction, labelA, labelB;
+  let shortA;
+  let shortB;
+  let mediumA;
+  let mediumB;
+  let longA;
+  let longB;
+  let direction;
+  let labelA;
+  let labelB;
 
   if (strategy === "even_odd") {
+
     shortA = short.evenPercent;
     shortB = short.oddPercent;
+
     mediumA = medium.evenPercent;
     mediumB = medium.oddPercent;
+
     longA = long.evenPercent;
     longB = long.oddPercent;
-    direction = shortA >= shortB ? "EVEN" : "ODD";
+
+    direction =
+      shortA >= shortB
+        ? "EVEN"
+        : "ODD";
+
     labelA = "pares";
     labelB = "impares";
-  } else {
-    shortA = short.highPercent;
-    shortB = short.lowPercent;
-    mediumA = medium.highPercent;
-    mediumB = medium.lowPercent;
-    longA = long.highPercent;
-    longB = long.lowPercent;
-    direction = shortA >= shortB ? "OVER" : "UNDER";
-    labelA = "altos";
-    labelB = "bajos";
+
   }
 
-  const shortDiff = Math.abs(shortA - shortB);
-  const mediumDiff = Math.abs(mediumA - mediumB);
-  const longDiff = Math.abs(longA - longB);
+  else {
 
-  const shortSideA = shortA >= shortB;
-  const mediumSideA = mediumA >= mediumB;
-  const longSideA = longA >= longB;
+    shortA = short.highPercent;
+    shortB = short.lowPercent;
+
+    mediumA = medium.highPercent;
+    mediumB = medium.lowPercent;
+
+    longA = long.highPercent;
+    longB = long.lowPercent;
+
+    direction =
+      shortA >= shortB
+        ? "OVER"
+        : "UNDER";
+
+    labelA = "altos";
+    labelB = "bajos";
+
+  }
+
+  const shortDiff =
+    Math.abs(
+      shortA -
+      shortB
+    );
+
+  const mediumDiff =
+    Math.abs(
+      mediumA -
+      mediumB
+    );
+
+  const longDiff =
+    Math.abs(
+      longA -
+      longB
+    );
+
+  const shortSideA =
+    shortA >= shortB;
+
+  const mediumSideA =
+    mediumA >= mediumB;
+
+  const longSideA =
+    longA >= longB;
 
   const agreement =
-    Number(shortSideA === mediumSideA) +
-    Number(shortSideA === longSideA);
+    Number(
+      shortSideA === mediumSideA
+    ) +
+    Number(
+      shortSideA === longSideA
+    );
 
-  let score =
+
+  /*
+    IMPORTANTE:
+
+    Este es el puntaje REAL antes
+    de limitarlo a 100.
+
+    Ejemplo:
+    rawScore = 126.40
+
+    La herramienta seguirá mostrando
+    score = 100,
+
+    pero ahora podremos saber que
+    realmente era 126.40.
+  */
+
+  let rawScore =
     50 +
     shortDiff * 1.25 +
     mediumDiff * 0.65 +
     longDiff * 0.25 +
     agreement * 5;
 
-  if (shortDiff < 6) score -= 10;
+
+  if (
+    shortDiff <
+    6
+  ) {
+
+    rawScore -= 10;
+
+  }
+
+
+  const visibleScore =
+    Math.round(
+      clamp(
+        rawScore,
+        0,
+        100
+      )
+    );
+
 
   return output(
     strategy,
-    score >= 55 ? direction : "WAIT",
-    score,
+
+    visibleScore >= 55
+      ? direction
+      : "WAIT",
+
+    rawScore,
+
     [
       `Ventana corta: ${shortDiff.toFixed(1)}% de diferencia.`,
+
+      `Score bruto: ${rawScore.toFixed(2)} · visible: ${visibleScore}%`,
+
       `Comparación de ${labelA} frente a ${labelB}.`,
+
       `Coincidencia entre ventanas: ${agreement + 1} de 3.`
     ],
-    ["La distribución histórica no garantiza el siguiente dígito."],
-    { shortDiff, mediumDiff, longDiff, agreement }
-  );
-}
 
+    [
+      "La distribución histórica no garantiza el siguiente dígito."
+    ],
+
+    {
+      shortDiff,
+      mediumDiff,
+      longDiff,
+      agreement,
+
+      shortA,
+      shortB,
+      mediumA,
+      mediumB,
+      longA,
+      longB,
+
+      rawScore:
+        Math.round(
+          rawScore * 100
+        ) / 100,
+
+      visibleScore,
+
+      scoreSaturated:
+        rawScore > 100
+    }
+);
+} 
 
 function median(values) {
   if (!values.length) return 0;
